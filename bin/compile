@@ -189,38 +189,29 @@ echo 'export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/vendor/ffmpeg/lib"' >> $FFM
 ############################################
 echo "-----> Install wkhtmltopdf"
 
-BIN_PATH="$1/bin/"
-mkdir -p $BIN_PATH
+BUILD_DIR=$1
+CACHE_DIR=$2
 
-#WKHTMLTOPDF_BINARY="http://sourceforge.net/projects/wkhtmltopdf/files/0.12.1/wkhtmltox-0.12.1_linux-trusty-amd64.deb/download"
-#WKHTMLTOPDF_BINARY="http://downloads.sourceforge.net/project/wkhtmltopdf/0.12.2/wkhtmltox-0.12.2_linux-trusty-amd64.deb"
-#WKHTMLTOPDF_BINARY="http://downloads.sourceforge.net/project/wkhtmltopdf/0.12.2.1/wkhtmltox-0.12.2.1_linux-trusty-amd64.deb"
+DEB="$CACHE_DIR/wkhtmltopdf.deb"
+TS=`date +%s`
 
-#store immutable copy
-WKHTMLTOPDF_BINARY="https://github.com/jornwanke-liquidlabs/cloudcontrol-wkhtmltopdf-buildpack/blob/master/wkhtmltox-0.12.2.1_linux-trusty-amd64.deb?raw=true"
+WKHTMLTOPDF_DOWNLOAD_URL="http://download.gna.org/wkhtmltopdf/0.12/0.12.1/wkhtmltox-0.12.1_linux-trusty-amd64.deb"
+echo "-----> Downloading wkhtmltopdf: $WKHTMLTOPDF_DOWNLOAD_URL"
+curl -L --silent -o $DEB $WKHTMLTOPDF_DOWNLOAD_URL
 
-WKHTMLTOPDF_PATH="$1/bin/wkhtmltopdf"
-WKHTMLTOPDF_COMPRESSED_PATH="$1/bin/wkhtmltopdf.tar.xz"
-WKHTMLTOX_PATH="$1/bin/usr/local/bin"
 
-echo "BIN_PATH"
-echo $BIN_PATH
+echo "-----> Installing wkhtmltopdf 0.12.2.1"
+mkdir -p $BUILD_DIR/.apt
+dpkg -x $DEB $BUILD_DIR/.apt/
 
-echo "-----> Transferring wkhtmltopdf compressed binary"
-curl -L $WKHTMLTOPDF_BINARY -o $WKHTMLTOPDF_COMPRESSED_PATH
-
-echo "-----> Decompressing binary"
-dpkg -x $WKHTMLTOPDF_COMPRESSED_PATH $BIN_PATH
-
-echo "-----> Removing compressed binary"
-rm -f $WKHTMLTOPDF_COMPRESSED_PATH
-
-echo "-----> Moving binary to the right place from wkhtmltox"
-mv $WKHTMLTOX_PATH/wkhtmltopdf $BIN_PATH
-
-echo "-----> Removing wkhtmltox folder"
-#rm -rf $WKHTMLTOX_PATH
-
-echo "-----> Setting permissions"
-#chmod +x $WKHTMLTOPDF_PATH
+echo "Writing profile script" | indent
+mkdir -p $BUILD_DIR/.profile.d
+cat <<EOF >$BUILD_DIR/.profile.d/wkhtmltopdf.sh
+export PATH="\$HOME/.apt/usr/local/bin:\$PATH"
+export LD_LIBRARY_PATH="\$HOME/.apt/usr/local/lib/x86_64-linux-gnu:\$HOME/.apt/usr/local/lib/i386-linux-gnu:\$HOME/.apt/usr/local/lib:\$LD_LIBRARY_PATH"
+export LIBRARY_PATH="\$HOME/.apt/usr/local/lib/x86_64-linux-gnu:\$HOME/.apt/usr/local/lib/i386-linux-gnu:\$HOME/.apt/usr/local/lib:\$LIBRARY_PATH"
+export INCLUDE_PATH="\$HOME/.apt/usr/local/include:\$INCLUDE_PATH"
+export CPATH="\$INCLUDE_PATH"
+export CPPPATH="\$INCLUDE_PATH"
+export PKG_CONFIG_PATH="\$HOME/.apt/usr/local/lib/x86_64-linux-gnu/pkgconfig:\$HOME/.apt/usr/local/lib/i386-linux-gnu/pkgconfig:\$HOME/.apt/usr/local/lib/pkgconfig:\$PKG_CONFIG_PATH"
 
