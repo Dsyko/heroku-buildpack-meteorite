@@ -103,17 +103,17 @@ export CPATH="$INCLUDE_PATH"
 export CPPPATH="$INCLUDE_PATH"
 
 ############################################
-# install meteorite
+# install fibers
 ############################################
-echo "-----> Installing meteorite with npm"
+echo "-----> Installing fibers with npm"
 
-run_npm "install meteorite fibers -g"
-echo "Meteorite installed" | indent
+run_npm "install fibers -g"
+echo "Fibers installed" | indent
 
 METEOR_BUILD_DIR="$BUILD_DIR/.meteor/heroku_build"
 mkdir -p "$HOME"
 ############################################
-# install meteor + packages through mrt
+# install meteor + packages
 # bundle, and install into app/
 ############################################
 cd $BUILD_DIR
@@ -124,8 +124,6 @@ VENDORED_METEOR="$(mktmpdir meteor)"
 curl https://install.meteor.com | HOME="$VENDORED_METEOR" /bin/sh | indent
 echo "Meteor installed" | indent
 
-echo "Installing packages" | indent
-HOME="$BUILD_DIR" mrt install --force | indent
 echo "Building meteor bundle" | indent
 HOME="$VENDORED_METEOR" "$VENDORED_METEOR"/.meteor/meteor bundle "$CACHE_DIR"/bundle.tar.gz 2>&1 | indent
 
@@ -152,7 +150,7 @@ mkdir -p "$METEOR_BUILD_DIR/bin"
 cp "$VENDORED_NODE/bin/node" "$METEOR_BUILD_DIR/bin/node"
 
 ############################################
-# Run npm install beforein order to ensure fibers and others npm packages used by meteor are installed
+# Run npm install before in order to ensure fibers and others npm packages used by meteor are installed
 # as stated in meteor docs: http://docs.meteor.com/#deploying
 ############################################
 echo "-----> Move to app directory: /programs/server"
@@ -160,3 +158,62 @@ cd "$METEOR_BUILD_DIR"/app/programs/server
 
 echo "-----> Run npm install"
 npm install
+
+indent() {
+  sed -u 's/^/       /'
+}
+
+############################################
+# Install ffmpeg
+############################################
+echo "-----> Install ffmpeg"
+FFMPEG_BUILD_DIR=$1
+FFMPEG_VENDOR_DIR="vendor"
+FFMPEG_DOWNLOAD_URL="https://s3.amazonaws.com/torsh-talent/ffmpeg3.tar.gz"
+
+echo "DOWNLOAD_URL = " $FFMPEG_DOWNLOAD_URL | indent
+
+cd $FFMPEG_BUILD_DIR
+mkdir -p $FFMPEG_VENDOR_DIR
+cd $FFMPEG_VENDOR_DIR
+curl -L --silent $FFMPEG_DOWNLOAD_URL | tar xz
+
+echo "exporting PATH and LIBRARY_PATH" | indent
+FFMPEG_PROFILE_PATH="$FFMPEG_BUILD_DIR/.profile.d/ffmpeg.sh"
+mkdir -p $(dirname $FFMPEG_PROFILE_PATH)
+echo 'export PATH="$PATH:$HOME/vendor/ffmpeg/bin"' >> $FFMPEG_PROFILE_PATH
+echo 'export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/vendor/ffmpeg/lib"' >> $FFMPEG_PROFILE_PATH
+
+
+
+############################################
+# Install wkhtmltopdf
+############################################
+echo "-----> Install wkhtmltopdf"
+
+BUILD_DIR=$1
+CACHE_DIR=$2
+
+DEB="$CACHE_DIR/wkhtmltopdf.deb"
+TS=`date +%s`
+
+WKHTMLTOPDF_DOWNLOAD_URL="http://download.gna.org/wkhtmltopdf/0.12/0.12.1/wkhtmltox-0.12.1_linux-trusty-amd64.deb"
+echo "-----> Downloading wkhtmltopdf: $WKHTMLTOPDF_DOWNLOAD_URL"
+curl -L --silent -o $DEB $WKHTMLTOPDF_DOWNLOAD_URL
+
+
+echo "-----> Installing wkhtmltopdf 0.12.2.1"
+mkdir -p $BUILD_DIR/.apt
+dpkg -x $DEB $BUILD_DIR/.apt/
+
+echo "Writing profile script" | indent
+mkdir -p $BUILD_DIR/.profile.d
+cat <<EOF >$BUILD_DIR/.profile.d/wkhtmltopdf.sh
+export PATH="\$HOME/.apt/usr/local/bin:\$PATH"
+export LD_LIBRARY_PATH="\$HOME/.apt/usr/local/lib/x86_64-linux-gnu:\$HOME/.apt/usr/local/lib/i386-linux-gnu:\$HOME/.apt/usr/local/lib:\$LD_LIBRARY_PATH"
+export LIBRARY_PATH="\$HOME/.apt/usr/local/lib/x86_64-linux-gnu:\$HOME/.apt/usr/local/lib/i386-linux-gnu:\$HOME/.apt/usr/local/lib:\$LIBRARY_PATH"
+export INCLUDE_PATH="\$HOME/.apt/usr/local/include:\$INCLUDE_PATH"
+export CPATH="\$INCLUDE_PATH"
+export CPPPATH="\$INCLUDE_PATH"
+export PKG_CONFIG_PATH="\$HOME/.apt/usr/local/lib/x86_64-linux-gnu/pkgconfig:\$HOME/.apt/usr/local/lib/i386-linux-gnu/pkgconfig:\$HOME/.apt/usr/local/lib/pkgconfig:\$PKG_CONFIG_PATH"
+
