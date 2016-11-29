@@ -63,20 +63,22 @@ function package_download() {
 
 echo "-----> Resolving engine versions"
 
-#TODO: Fix package.json loading
-#if [ -f "${BUILD_DIR}/package.json" ]; then
-#  requested_node_ver=$(cat $BUILD_DIR/package.json | $LP_DIR/vendor/jq -r .engines.node)
-#fi
+#TODO: Fix package.json loading. 
+if [ -f "${BUILD_DIR}/package.json" ]; then
+ #requested_node_ver=$(cat $BUILD_DIR/package.json | $LP_DIR/vendor/jq -r .engines.node) where is jq? that would be perfect.
+ #BLA="$(node -p "require('./package.json').engines.node")" not sure using node is possible here. ( is it installed?)
+ echo "package.json exist"
+fi
 #temporary - load from nodeversion
 requested_node_ver=""
-if [ -f "${BUILD_DIR}/nodeversion" ]; then
-  echo " - nodeversion file detected, using for semvar" | indent
-  requested_node_ver=$(cat $BUILD_DIR/nodeversion)
-  echo " - requested version: $requested_node_ver" | indent
-fi
+# if [ -f "${BUILD_DIR}/nodeversion" ]; then
+#   echo " - nodeversion file detected, using for semvar" | indent
+#   requested_node_ver=$(cat $BUILD_DIR/nodeversion)
+#   echo " - requested version: $requested_node_ver" | indent
+# fi
 # add a warning if no version of node specified
 if [ "$requested_node_ver" == "" ]; then
-  requested_node_ver="0.10.41"
+  requested_node_ver="4.6.2"
   echo
   echo "No version of Node.js specified in nodeversion, using '${requested_node_ver}'" | indent
   echo
